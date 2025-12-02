@@ -26,16 +26,30 @@ pub fn process(fname: []const u8) !u64 {
         std.log.info(" {d} {d}", .{ start, end });
         for (start..end + 1) |val| {
             const digit_count = std.math.log10(val) + 1;
-            if (digit_count % 2 != 0) {
-                continue;
-            }
-            var num_buf: [20]u8 = undefined; // we know its digit_count but must be comptime
+            var num_buf: [32]u8 = undefined; // we know its digit_count but must be comptime
             const val_str = try std.fmt.bufPrint(&num_buf, "{}", .{val});
-            const first_half = val_str[0 .. digit_count / 2];
-            const second_half = val_str[digit_count / 2 .. digit_count];
-            if (std.mem.eql(u8, first_half, second_half)) {
-                std.log.info(" dc {} even digits {} (str {s} = {s} {s})", .{ digit_count, val, val_str, first_half, second_half });
-                invalid_sum += val;
+
+            //std.log.info("dc {d}", .{digit_count});
+            for (1..digit_count) |part_size| {
+                if (digit_count % part_size != 0) {
+                    continue;
+                }
+                //std.log.info("ps {d}", .{part_size});
+                var part_it = std.mem.window(u8, val_str, part_size, part_size);
+                const first_part = part_it.next() orelse return error.MissingFirstPart;
+                //std.log.info("fp {s}", .{first_part});
+
+                var bad = false;
+                while (part_it.next()) |nth_part| {
+                    if (!std.mem.eql(u8, first_part, nth_part)) {
+                        bad = true;
+                    }
+                }
+                if (!bad) {
+                    invalid_sum += val;
+                    // std.log.info(" dc {} val {} (part_size: {}, part {s})", .{ digit_count, val, part_size, first_part });
+                    break; // need to only count the number as bad once, 2222 just counts once not as `2`, `22`
+                }
             }
         }
     }
