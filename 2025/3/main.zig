@@ -1,48 +1,34 @@
 const std = @import("std");
 
 test "test data p2" {
-    const result1 = try parse_line_part2("987654321111111");
+    const result1 = try parse_line_part2(12, "987654321111111");
     try std.testing.expectEqual(result1, 987654321111);
-    const result2 = try parse_line_part2("811111111111119");
+    const result2 = try parse_line_part2(12, "811111111111119");
     try std.testing.expectEqual(result2, 811111111119);
-    const result3 = try parse_line_part2("234234234234278");
+    const result3 = try parse_line_part2(12, "234234234234278");
     try std.testing.expectEqual(result3, 434234234278);
-    const result4 = try parse_line_part2("818181911112111");
+    const result4 = try parse_line_part2(12, "818181911112111");
     try std.testing.expectEqual(result4, 888911112111);
 }
 
 test "test data p2 real" {
-    const result = try parse_line_part2("8253243324523333532224546353152554242525224253255824125264455332262523225422354333245722624625223832");
+    const result = try parse_line_part2(12, "8253243324523333532224546353152554242525224253255824125264455332262523225422354333245722624625223832");
     try std.testing.expectEqual(result, 887665223832);
 }
 
-test "test data" {
-    const result1 = try parse_line_part1("987654321111111");
+test "test data example" {
+    const result1 = try parse_line_part2(2, "987654321111111");
     try std.testing.expectEqual(result1, 98);
-    const result2 = try parse_line_part1("811111111111119");
+    const result2 = try parse_line_part2(2, "811111111111119");
     try std.testing.expectEqual(result2, 89);
-    const result3 = try parse_line_part1("234234234234278");
+    const result3 = try parse_line_part2(2, "234234234234278");
     try std.testing.expectEqual(result3, 78);
-    const result4 = try parse_line_part1("818181911112111");
+    const result4 = try parse_line_part2(2, "818181911112111");
     try std.testing.expectEqual(result4, 92);
 }
-pub fn parse_line_part1(line: []const u8) !u8 {
-    var first: u8 = 0;
-    var second: u8 = 0;
-    for (line, 0..) |c, i| {
-        const d = try std.fmt.charToDigit(c, 10);
-        if (d > first and i < line.len - 1) {
-            first = d;
-            second = 0;
-        } else if (d > second) {
-            second = d;
-        }
-    }
-    return first * 10 + second;
-}
 
-pub fn parse_line_part2(line: []const u8) !u64 {
-    var digits: [12]u8 = .{0} ** 12;
+pub fn parse_line_part2(comptime N: usize, line: []const u8) !u64 {
+    var digits: [N]u8 = .{0} ** N;
     var in_digits: [100]u8 = undefined;
 
     for (line, 0..) |c, i| {
@@ -81,7 +67,7 @@ pub fn process(fname: []const u8) !u64 {
     var res: u64 = 0;
     while (try reader.interface.takeDelimiter('\n')) |line| {
         std.debug.print("line {s}\n", .{line});
-        const line_res = try parse_line_part2(line);
+        const line_res = try parse_line_part2(12, line);
         std.debug.print(" res = {d}\n", .{line_res});
         res += line_res;
     }
