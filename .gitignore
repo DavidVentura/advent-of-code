@@ -1,1 +1,4 @@
 .zig-cache
+*.txt
+o
+out

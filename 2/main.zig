@@ -5,6 +5,10 @@ test "test data" {
     const result = try process("test_data.txt");
     try std.testing.expectEqual(result, 1227775554);
 }
+test "test second part" {
+    const result = try process("test_data.txt");
+    try std.testing.expectEqual(result, 4174379265);
+}
 
 pub fn process(fname: []const u8) !u64 {
     const file = try std.fs.cwd().openFile(fname, .{});
@@ -39,13 +43,11 @@ pub fn process(fname: []const u8) !u64 {
                 const first_part = part_it.next() orelse return error.MissingFirstPart;
                 //std.log.info("fp {s}", .{first_part});
 
-                var bad = false;
-                while (part_it.next()) |nth_part| {
-                    if (!std.mem.eql(u8, first_part, nth_part)) {
-                        bad = true;
-                    }
-                }
-                if (!bad) {
+                const all_match = while (part_it.next()) |nth_part| {
+                    if (!std.mem.eql(u8, first_part, nth_part)) break false;
+                } else true;
+
+                if (all_match) {
                     invalid_sum += val;
                     // std.log.info(" dc {} val {} (part_size: {}, part {s})", .{ digit_count, val, part_size, first_part });
                     break; // need to only count the number as bad once, 2222 just counts once not as `2`, `22`
@@ -60,7 +62,7 @@ pub fn main() !void {
     //defer arena.deinit();
     //const gpa = arena.allocator();
 
-    const invalid_sum = try process("problem-1.txt");
-    //const invalid_sum = try process("test_data.txt");
+    //const invalid_sum = try process("problem-1.txt");
+    const invalid_sum = try process("test_data.txt");
     std.log.info(" Invalid sum {d}", .{invalid_sum});
 }
