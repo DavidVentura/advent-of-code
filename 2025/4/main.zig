@@ -18,19 +18,27 @@ pub fn main() !void {
     const n = 138;
     var bitmap: [n][n]u1 = undefined;
     var neighbors: [n][n]u8 = undefined;
-    @memset(std.mem.asBytes(&neighbors), 0);
+    var res: u64 = 0;
     _ = try process_file_to_bitmap(138, "input.txt", &bitmap);
 
-    try update_neighbors(n, &bitmap, &neighbors);
-    var res: u64 = 0;
+    // loop
+    var updated = true;
+    while (updated) {
+        @memset(std.mem.asBytes(&neighbors), 0);
+        try update_neighbors(n, &bitmap, &neighbors);
 
-    for (0..n) |y| {
-        for (0..n) |x| {
-            if (bitmap[y][x] == 1 and neighbors[y][x] < 4) {
-                res += 1;
+        updated = false;
+        for (0..n) |y| {
+            for (0..n) |x| {
+                if (bitmap[y][x] == 1 and neighbors[y][x] < 4) {
+                    res += 1;
+                    bitmap[y][x] = 0; // remove roll
+                    updated = true;
+                }
             }
         }
     }
+
     std.log.info(" result {d}", .{res});
 }
 
@@ -48,6 +56,7 @@ const Data = struct {
     neighbors: [][]u8,
 };
 
+/// count bitmap into neighbors
 pub fn update_neighbors(comptime N: usize, bitmap: *const [N][N]u1, neighbors: *[N][N]u8) !void {
     for (0..bitmap.len) |line_count| {
         for (0..bitmap.len) |i| {
