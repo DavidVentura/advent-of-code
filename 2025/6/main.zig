@@ -20,10 +20,7 @@ pub fn process_file(alloc: std.mem.Allocator, fname: []const u8) !u64 {
     var reader = file.reader(&buf);
     var res: u64 = 0;
 
-    var sum: std.ArrayList(u64) = .empty;
-    var mul: std.ArrayList(u64) = .empty;
-    var picked: std.ArrayList(u64) = .empty;
-
+    var lines: std.ArrayList([]u8) = .empty;
     var last_line: []u8 = undefined;
 
     while (try reader.interface.takeDelimiter('\n')) |line| {
@@ -31,36 +28,61 @@ pub fn process_file(alloc: std.mem.Allocator, fname: []const u8) !u64 {
             last_line = line;
             break;
         }
-        var it = std.mem.tokenizeScalar(u8, line, ' ');
-        var i: u64 = 0;
-        while (it.next()) |split| {
-            const num = try std.fmt.parseUnsigned(u64, split, 10);
-            if (sum.items.len <= i) {
-                try sum.append(alloc, num);
-                try mul.append(alloc, num);
-                _ = try picked.addOne(alloc);
-            } else {
-                sum.items[i] += num;
-                mul.items[i] *= num;
-            }
-            i += 1;
+
+        try lines.append(alloc, line);
+    }
+
+    var ops: std.ArrayList(u8) = .empty;
+    var columns_start: std.ArrayList(u64) = .empty;
+    for (last_line, 0..) |c, i| {
+        if (c == '+' or c == '*') {
+            try ops.append(alloc, c);
+            try columns_start.append(alloc, i);
         }
     }
 
-    var it = std.mem.tokenizeScalar(u8, last_line, ' ');
-    var i: u64 = 0;
-    var item: u64 = 0;
-    while (it.next()) |op| {
-        if (op[0] == '+') {
-            item = sum.items[i];
-        } else if (op[0] == '*') {
-            item = mul.items[i];
-        } else {
-            return error.WTF;
+    const columns = ops.items.len;
+    const rows = lines.items.len;
+    println("columns {} rows {}", .{ columns, rows });
+
+    for (0..columns) |column| {
+        const col_start = columns_start.items[column];
+        const col_end = if (column < columns - 1)
+            columns_start.items[column + 1] - 1
+        else
+            // every line has same width
+            last_line.len;
+
+        const max_digits: u64 = col_end - col_start;
+
+        const op = ops.items[column];
+        var col_total: u64 = if (op == '+') 0 else 1; // identity
+        for (0..max_digits) |di| {
+            var vertical_num: u64 = 0;
+            for (0..rows) |row| {
+                const line = lines.items[row];
+                const num_str = line[col_start..col_end];
+
+                const maybe_digit = num_str[di];
+                //println("num_str = '{s}', di = {}, maybe = '{c}'", .{ num_str, di, maybe_digit });
+                if (maybe_digit == ' ') {
+                    continue;
+                }
+                const digit = try std.fmt.charToDigit(maybe_digit, 10);
+                vertical_num = vertical_num * 10 + digit;
+            }
+            println("vertical_num {}, op {c}", .{ vertical_num, op });
+            if (op == '+') {
+                col_total += vertical_num;
+            } else {
+                col_total *= vertical_num;
+            }
         }
-        picked.items[i] = item;
-        res += item;
-        i += 1;
+        println("col_total {}", .{col_total});
+        res += col_total;
+
+        println("", .{});
     }
+
     return res;
 }
