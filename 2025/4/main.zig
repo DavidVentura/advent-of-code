@@ -1,15 +1,5 @@
 const std = @import("std");
 
-const Neighbors = packed struct {
-    p: u3,
-    c: u2,
-    n: u3,
-};
-
-pub fn count(n: Neighbors) u8 {
-    return @popCount(@as(u8, @bitCast(n)));
-}
-
 pub fn main() !void {
     // for each position, store 8 bits: pppccnnn (prev cur next line bit)
     // each line: calcs self, adds itself to prev, adds prev to self.. then no need to do it?
